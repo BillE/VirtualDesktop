@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.dataclear.SystemCommandExecutor;
-
 import javafx.application.Application;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -20,6 +20,11 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
+import javafx.scene.input.KeyCombination.Modifier;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -49,15 +54,19 @@ public class DataClear extends Application {
     
     private static final String USER_NAME_PROMPT = "User Name:";
     private static final String PASSWORD_PROMPT = "Password:";
+    private static final String CURRENT_PASSWORD_PROMPT = "Current Password:";
+    private static final String NEW_PASSWORD_PROMPT = "New Password:";
+    
     private static final String WELCOME_TEXT = "Welcome";
     private static final String SIGN_IN_BUTTON_TEXT = "Sign In";
-    private static final String AUTHORIZING_TEXT = "Authorizing";
+    private static final String UPDATE_PASSWORD_BUTTON_TEXT = "Update Password";
+    private static final String AUTHORIZING_TEXT = "Authorizing...";
+    private static final String AUTHORIZATION_FAILURE_TEXT = "Login Failed. Please try again.";
+    private static final String PASSWORD_MATCH_ERROR = "New passwords do not match. Please try again.";
+    private static final String COMPLEXITY_FAILURE_TEXT = "Password too simple. Please try again.";
+    private static final String UNKNOWN_ERROR_TEXT = "Please try again.";
     
     private static final String GET_WIFI_LIST_COMMAND = "nmcli dev wifi list";
-    
-    /**
-     * sudo /usr/bin/nmcli dev wifi connect <SSID> password <password>
-     */
     private static final String CONNECT_TO_WIFI_COMMAND = "sudo /usr/bin/nmcli dev wifi connect";
     private static final String CONNECT_TO_WIFI_COMMAND_PWD = "password";
     
@@ -65,14 +74,15 @@ public class DataClear extends Application {
     private static final String WIFI_PASSWORD_PROMPT = "Enter WIFI password";
     private static final String WIFI_SUBMIT_BUTTON_TEXT = "Submit";
     
+    
     private static final ObservableList<String> wifiConnections = 
             FXCollections.observableArrayList();
     
     @Override
     public void start(Stage primaryStage) throws Exception {
-        // check internet connection
+        // check Internet connection
         primaryStage.setTitle(TITLE_TEXT);
-        if (! isConnected()) {
+        if (! isConnected() ) {
             setChooseWifiStage(primaryStage);
         } else {
             setLoginStage(primaryStage);
@@ -110,6 +120,14 @@ public class DataClear extends Application {
             return false;
         }
         return true;
+    }
+    
+    private String changePassword(String loginID, String oldPassword, String newPassword) {
+        try {
+            return APICalls.changePassword(loginID, oldPassword, newPassword);
+        } catch (Exception e) {
+            return APICalls.FALSE_RESULT;
+        }
     }
     
     private void setChooseWifiStage(Stage primaryStage) throws IOException, InterruptedException {
@@ -204,7 +222,11 @@ public class DataClear extends Application {
 
         primaryStage.setTitle(TITLE_TEXT);
         primaryStage.setScene(scene);
-        // primaryStage.setFullScreen(true);
+        primaryStage.setFullScreenExitHint("");
+        // TODO: Go live with this.
+        // primaryStage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
+        primaryStage.setFullScreenExitKeyCombination(new KeyCodeCombination(KeyCode.E, KeyCombination.CONTROL_DOWN));
+        primaryStage.setFullScreen(true);
         primaryStage.show();
         
         /*
@@ -303,6 +325,10 @@ public class DataClear extends Application {
         return true;
     }
     
+    /*
+     * Show login screen and set logic.
+     * If the user has an insecure login, force password change
+     */
     private void setLoginStage(Stage primaryStage) {       
         // Create a GridPane Layout
         GridPane grid = new GridPane();
@@ -337,24 +363,226 @@ public class DataClear extends Application {
         hbBtn.getChildren().add(btn);
         grid.add(hbBtn, 1, 4);
         
-        final Text actiontarget = new Text();
-        grid.add(actiontarget, 1, 6);
-        
+        Text messageText = new Text();
+        grid.add(messageText, 1, 6);
+        primaryStage.setFullScreenExitHint("");
+        primaryStage.setFullScreenExitKeyCombination(new KeyCodeCombination(KeyCode.E, KeyCombination.CONTROL_DOWN));
+        // TODO: Go live with this.
+        // primaryStage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
+        primaryStage.setFullScreen(true);
         primaryStage.show();
+        
+        /**
+         * Change message text on errors.
+         */
+        btn.addEventHandler(MouseEvent.MOUSE_PRESSED,
+                new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent e) {
+                setMessageText(messageText, AUTHORIZING_TEXT);
+            }
+          });
+        
+        userTextField.textProperty().addListener(new ChangeListener<String>() {
+            @Override
+            public void changed(ObservableValue<? extends String> observable,
+                    String oldValue, String newValue) {
+
+                setMessageText(messageText, "");
+            }
+        });
+        
+        pwBox.textProperty().addListener(new ChangeListener<String>() {
+            @Override
+            public void changed(ObservableValue<? extends String> observable,
+                    String oldValue, String newValue) {
+
+                setMessageText(messageText, "");
+            }
+        });         
         
         /**
          * Handle the submitted button action
          * 
          */
         btn.setOnAction(new EventHandler<ActionEvent>() {
-            
             @Override
             public void handle(ActionEvent e) {
-                actiontarget.setFill(Color.FIREBRICK);
-                actiontarget.setText(AUTHORIZING_TEXT);
-                setNavigationStage(primaryStage);
+                messageText.setFill(Color.FIREBRICK);
+                
+                // Call out to server to authorize
+                try {
+                    String result = APICalls.authorizeUser(userTextField.getText(), pwBox.getText());
+                    System.out.println(result);
+                    switch (result) {
+                        case APICalls.TRUE_RESULT:
+                            // login successful
+                            setNavigationStage(primaryStage);
+                            break;
+                            
+                        case APICalls.FALSE_RESULT:
+                            // login unsuccessful
+                            // set error string
+                            messageText.setText(AUTHORIZATION_FAILURE_TEXT);
+                            break;
+                            
+                        case APICalls.CHANGE_RESULT:
+                            // login successful but insecure (not to change password)
+                            setChangePasswordStage(primaryStage);
+                            break;
+                    }
+                    
+                } catch (Exception e1) {
+                    messageText.setText(UNKNOWN_ERROR_TEXT);
+                }
             }
-        });       
+        });    
+
+    }
+  
+    private void setMessageText(Text textField, String textValue) {
+        textField.setText(textValue);
+    }
+    
+    private void setChangePasswordStage(Stage primaryStage) {
+        // Create a GridPane Layout
+        GridPane grid = new GridPane();
+        grid.setAlignment(Pos.CENTER);
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(25, 25, 25, 25));
+
+        Scene scene = new Scene(grid, 300, 275);
+        primaryStage.setScene(scene);
+        
+        // Add Text, Labels, and Text Fields
+        Text scenetitle = new Text(WELCOME_TEXT);
+        scenetitle.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
+        grid.add(scenetitle, 0, 0, 2, 1);
+
+        Label userName = new Label(USER_NAME_PROMPT);
+        grid.add(userName, 0, 1);
+
+        TextField userNameTextField = new TextField();
+        grid.add(userNameTextField, 1, 1);
+
+        Label currentPasswordLabel = new Label(CURRENT_PASSWORD_PROMPT);
+        grid.add(currentPasswordLabel, 0, 2);
+
+        PasswordField currentPasswordBox = new PasswordField();
+        grid.add(currentPasswordBox, 1, 2);
+        
+        Label newPasswordLabelOne = new Label(NEW_PASSWORD_PROMPT);
+        grid.add(newPasswordLabelOne, 0, 3);
+
+        PasswordField newPasswordBoxOne = new PasswordField();
+        grid.add(newPasswordBoxOne, 1, 3); 
+        
+        Label newPasswordLabelTwo = new Label(NEW_PASSWORD_PROMPT);
+        grid.add(newPasswordLabelTwo, 0, 4);
+
+        PasswordField newPasswordBoxTwo = new PasswordField();
+        grid.add(newPasswordBoxTwo, 1, 4);         
+        
+        Button btn = new Button(UPDATE_PASSWORD_BUTTON_TEXT);
+        HBox hbBtn = new HBox(10);
+        hbBtn.setAlignment(Pos.BOTTOM_RIGHT);
+        hbBtn.getChildren().add(btn);
+        grid.add(hbBtn, 1, 5);
+        
+        Text messageText = new Text();
+        grid.add(messageText, 1, 6);
+        primaryStage.setFullScreenExitHint("");
+        primaryStage.setFullScreenExitKeyCombination(new KeyCodeCombination(KeyCode.E, KeyCombination.CONTROL_DOWN));
+        // TODO: Go live with this.
+        // primaryStage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
+        primaryStage.setFullScreen(true);
+        primaryStage.show(); 
+        
+        /**
+         * Change message text on errors.
+         */
+        hbBtn.addEventHandler(MouseEvent.MOUSE_PRESSED,
+                new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent e) {
+                setMessageText(messageText, AUTHORIZING_TEXT);
+            }
+          });
+        
+        currentPasswordBox.textProperty().addListener(new ChangeListener<String>() {
+            @Override
+            public void changed(ObservableValue<? extends String> observable,
+                    String oldValue, String newValue) {
+
+                setMessageText(messageText, "");
+            }
+        });
+        
+        newPasswordBoxOne.textProperty().addListener(new ChangeListener<String>() {
+            @Override
+            public void changed(ObservableValue<? extends String> observable,
+                    String oldValue, String newValue) {
+
+                setMessageText(messageText, "");
+            }
+        });  
+        
+        newPasswordBoxTwo.textProperty().addListener(new ChangeListener<String>() {
+            @Override
+            public void changed(ObservableValue<? extends String> observable,
+                    String oldValue, String newValue) {
+
+                setMessageText(messageText, "");
+            }
+        });        
+        
+        /**
+         * Handle button click
+         */
+        btn.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent e) {
+                
+                if (! newPasswordBoxOne.getText().equals(newPasswordBoxTwo.getText()) ) {
+                    messageText.setText(PASSWORD_MATCH_ERROR);
+                    return;
+                }
+                
+                // TODO: TEST
+                setChangePasswordStage(primaryStage);
+                
+                // Call out to server to authorize
+                try {
+                    String result = changePassword(
+                            userNameTextField.getText(), 
+                            currentPasswordBox.getText(), 
+                            newPasswordBoxOne.getText());
+                    System.out.println(result);
+                    switch (result) {
+                        case APICalls.TRUE_RESULT:
+                            // login successful
+                            setNavigationStage(primaryStage);
+                            break;
+                            
+                        case APICalls.FALSE_RESULT:
+                            // login unsuccessful
+                            // set error string
+                            messageText.setText(AUTHORIZATION_FAILURE_TEXT);
+                            break;
+                            
+                        case APICalls.PASSWORD_COMPLEXITY_RESULT:
+                            System.out.println("FAILED ON COMPLEXITY.");
+                            messageText.setText(COMPLEXITY_FAILURE_TEXT);
+                            break;
+                    }
+                    
+                } catch (Exception e1) {
+                    // TODO Auto-generated catch block
+                    messageText.setText(UNKNOWN_ERROR_TEXT);
+                }
+            }
+        }); 
     }
     
     private void setNavigationStage(Stage primaryStage) {
@@ -395,6 +623,10 @@ public class DataClear extends Application {
 
         primaryStage.setTitle(TITLE_TEXT);
         primaryStage.setScene(scene);
+        primaryStage.setFullScreenExitHint("");
+        primaryStage.setFullScreenExitKeyCombination(new KeyCodeCombination(KeyCode.E, KeyCombination.CONTROL_DOWN));
+        // TODO: Go live with this.
+        // primaryStage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
         primaryStage.setFullScreen(true);
         primaryStage.show();
         

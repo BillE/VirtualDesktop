@@ -1,26 +1,30 @@
 package com.dataclear;
+
 import com.chilkatsoft.*;
 
 public class ChilkatLibrary {
-    private static final String PUBLIC_KEY_FILE = System.getProperty("user.home") 
-            + "/.ssh/cPubKey.pem";
+    private static final String PUBLIC_KEY_FILE = 
+            System.getProperty("user.home") + "/.ssh/cPubKey.pem";
 
-    private static final String PRIVATE_KEY_FILE = System.getProperty("user.home") 
-            + "/.ssh/cPrivKey.pem";
+    private static final String PRIVATE_KEY_FILE = 
+            System.getProperty("user.home") + "/.ssh/cPrivKey.pem";
     
-    // TODO: unlock code
-    private static final String CHILKAT_UNLOCK_CODE = "Anything for 30-day trial";
+    private static final String CHILKAT_UNLOCK_CODE = "SHiTechEasyRSA_iBnGWPIZJlRG";
+    private static int errorCode = 0;
     
     static {
         try {
             System.loadLibrary("chilkat");
         } catch (UnsatisfiedLinkError e) {
             System.err.println("Native code library failed to load.\n" + e);
-            System.exit(1);
+            errorCode = 1;
         }
     }
 
     static String encrypt(String stringToEncrypt) throws Exception {
+        if (errorCode > 0) {
+            throw new Exception("Can't load encryption library.");
+        }
         CkRsa rsa = new CkRsa();
         rsa.put_EncodingMode("hex");
         
@@ -50,6 +54,9 @@ public class ChilkatLibrary {
     }
     
     static String decrypt(String stringToDecrypt) throws Exception {
+        if (errorCode > 0) {
+            throw new Exception("Can't load encryption library.");
+        }
         CkRsa rsa = new CkRsa();
         rsa.put_EncodingMode("hex");
         // load public key
