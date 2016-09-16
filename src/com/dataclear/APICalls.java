@@ -19,11 +19,14 @@ public class APICalls {
     private static final String CHANGE_PASSWORD_COMMAND = "ChangePass";
     private static final String SECURE_PASSWORD_COMMAND = "SecurePass";
     private static final String AUTHORIZE_USER_COMMAND = "NamePassVerify";
+
+    public static final String TRUE_LOGIN_RESULT = "TRUE";
+    public static final String FALSE_LOGIN_RESULT = "FALSE";
+    public static final String CHANGE_LOGIN_RESULT = "CHANGE";
     
-    public static final String TRUE_RESULT = "TRUE";
-    public static final String FALSE_RESULT = "FALSE";
-    public static final String CHANGE_RESULT = "CHANGE";
-    public static final String PASSWORD_COMPLEXITY_RESULT = "Failure Complexity";
+    public static final String TRUE_CHANGE_PASSWORD_RESULT = "Success";
+    public static final String FALSE_CHANGE_PASSWORD_RESULT = "Failure";
+    public static final String PASSWORD_COMPLEXITY_RESULT = "COMPLEXITY FAILURE";
 
     public static boolean isSecurePassword(String loginID) throws Exception  {
         HttpClient client = HttpClientBuilder.create().build();
@@ -133,14 +136,14 @@ public class APICalls {
         try {
             String result = authorizeUser("test2","P@$$w0rd!!!@#$");
             switch (result) {
-                case APICalls.TRUE_RESULT:
+                case APICalls.TRUE_LOGIN_RESULT:
                     System.out.println("True result.");
                     break;
                     
-                case APICalls.FALSE_RESULT:
+                case APICalls.FALSE_LOGIN_RESULT:
                     System.out.println("False result.");
                     break;
-                case APICalls.CHANGE_RESULT:
+                case APICalls.CHANGE_LOGIN_RESULT:
                     System.out.println("Change result.");
                     break;
             }
@@ -150,7 +153,23 @@ public class APICalls {
             e.printStackTrace();
         }
         
-        /*        
+        String loginID = "whereisbill";
+        String password = "da_DonAustin2112";
+        
+        try {
+            String result = authorizeUser(loginID, password);
+            System.out.println(result);
+            result = authorizeUser(loginID, "asdfadfsasdf");
+            System.out.println(result);
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
+        
+        
+               
+                /*
         try {
             String loginID = "whereisbill";
             isSecurePassword(loginID);
@@ -169,7 +188,8 @@ public class APICalls {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-         */
+        */
+         
     }
 
 }

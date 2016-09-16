@@ -1,6 +1,8 @@
 package com.dataclear;
 
-import com.chilkatsoft.*;
+import com.chilkatsoft.CkPrivateKey;
+import com.chilkatsoft.CkPublicKey;
+import com.chilkatsoft.CkRsa;
 
 public class ChilkatLibrary {
     private static final String PUBLIC_KEY_FILE = 
