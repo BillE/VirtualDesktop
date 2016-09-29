@@ -1,0 +1,12 @@
+#!/usr/bin/expect
+
+set username [lindex $argv 0];
+set password [lindex $argv 1];
+set config "/Users/bill/Downloads/DataClear_SoftEther.ovpn"
+
+spawn sudo /usr/local/sbin/openvpn --script-security 2  --config $config --auth-user-pass
+expect "Enter Auth Username:"
+send "$username\r"
+expect "Enter Auth Password:"
+send "$password\r"
+interact

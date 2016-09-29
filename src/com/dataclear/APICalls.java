@@ -26,7 +26,7 @@ public class APICalls {
     
     public static final String TRUE_CHANGE_PASSWORD_RESULT = "Success";
     public static final String FALSE_CHANGE_PASSWORD_RESULT = "Failure";
-    public static final String PASSWORD_COMPLEXITY_RESULT = "COMPLEXITY FAILURE";
+    public static final String PASSWORD_COMPLEXITY_RESULT = "Failure Complexity";
 
     public static boolean isSecurePassword(String loginID) throws Exception  {
         HttpClient client = HttpClientBuilder.create().build();
@@ -55,7 +55,7 @@ public class APICalls {
         }
         
         System.out.println(result);
-        return false;        
+        return false;
     }
     
     public static String authorizeUser(String username, String password) throws Exception {

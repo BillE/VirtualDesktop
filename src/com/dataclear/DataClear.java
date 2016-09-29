@@ -11,7 +11,7 @@ package com.dataclear;
  * Ubuntu. It is not designed to be portable. There are many calls to *nix specific
  * commands. 
  * 
- * @author <bill.eberle@gmail.com>
+ * @author <wildboar@protonmail.com>
  */
 
 import java.io.IOException;
@@ -23,7 +23,9 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.concurrent.Worker.State;
+import javafx.concurrent.WorkerStateEvent;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -42,6 +44,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyCombination.Modifier;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
@@ -60,12 +63,14 @@ import javafx.scene.web.WebView;
 import javafx.stage.Modality;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+import javafx.stage.WindowEvent;
 
 
 public class DataClear extends Application {
     // TODO: strings in another file
     // TODO: check in build for for all the dependencies
-    private static final String TITLE_TEXT = "DataClear Navigation";
+    private static final String TITLE_TEXT = "DataClear Secure Desktop Computing";
     
     private static final String NETFLIX_TEXT = "Netflix";
     private static final String BROWSER_TEXT = "Local Browser";
@@ -74,6 +79,7 @@ public class DataClear extends Application {
     private static final String NETFLIX_URL = "http://www.netflix.com";
     private static final String BROWSER_URL = "http://www.dataclear.com";
     private static final String DESKTOP_URL = "http://10.233.3.24/Citrix/StoreWeb/";
+    private static final String OPENVPN_SCRIPT_PATH = "/home/dataclear/Scripts/dataclear_openvpn.exp";
     
     private static final String FIREFOX_PATH = "/usr/bin/firefox";
     private static final String CHROME_PATH = "/opt/google/chrome/google-chrome";
@@ -83,7 +89,7 @@ public class DataClear extends Application {
     private static final String CURRENT_PASSWORD_PROMPT = "Current Password:";
     private static final String NEW_PASSWORD_PROMPT = "New Password:";
     
-    private static final String WELCOME_TEXT = "Welcome";
+    private static final String WELCOME_TEXT = "Welcome To DataClear";
     private static final String SIGN_IN_BUTTON_TEXT = "Sign In";
     private static final String UPDATE_PASSWORD_BUTTON_TEXT = "Update Password";
     private static final String AUTHORIZING_TEXT = "Authorizing...";
@@ -95,6 +101,8 @@ public class DataClear extends Application {
     private static final String GET_WIFI_LIST_COMMAND = "nmcli dev wifi list";
     private static final String GET_WIFI_CONNECTED_COMMAND = "iwgetid -r";
     private static final String CONNECT_TO_WIFI_COMMAND = "sudo /usr/bin/nmcli dev wifi connect";
+    private static final String DELETE_WIFI_CONNECTION = "sudo /usr/bin/nmcli connection delete id";
+    
     private static final String CONNECT_TO_WIFI_COMMAND_PWD = "password";
     private static final String START_VPN_COMMAND = "sudo /usr/sbin/service openvpn start dataclear";
     private static final String STOP_VPN_COMMAND = "sudo /usr/sbin/service openvpn stop dataclear";
@@ -103,7 +111,7 @@ public class DataClear extends Application {
     private static final String PING_VPN_HOST = "10.233.3.24";
     
     private static final String WIFI_CHANGE_WIFI_TEXT = "Would you like to change to a new Wifi source?";
-    private static final String WIFI_PASSWORD_PROMPT = "Enter WiFi password";
+    private static final String WIFI_PASSWORD_PROMPT = "WiFi password";
     private static final String WIFI_SUBMIT_BUTTON_TEXT = "Submit";
     private static final String WIFI_CONNECTION_ERROR = "Error connecting to WiFi. Try again.";
     private static final String WIFI_NO_SELECTION_ERROR = "No SSID selected.";
@@ -114,6 +122,7 @@ public class DataClear extends Application {
     private static final String BACK_BUTTON_TEXT = "Back To Settings";
     private static final String COMING_SOON_TEXT = "This feature not yet availabe. Please try again later.";
     private static final String CONNECTING_TEXT = "Connecting to DataClear...";
+    private static final String CONNECTED_TEXT = "Connected!";
     
     private static final String WIFI_SETTINGS = "WIFI Settings";
     private static final String CHANGE_PASSWORD = "Change Password";
@@ -122,10 +131,13 @@ public class DataClear extends Application {
     
     private static final String VPN_CONNECTION_ERROR = "Unable to make a secure connection.";
     private static final String SYSTEM_FAILURE = "System unavailable. Please try later.";
+    private static final String AVAILABLE_WIFI_TEXT = "Available WiFi";
+    private static final String CHOOSE_WIFI_TEXT = "Please select WiFi and enter password below";
+    
+    private static final String DATACLEAR_HELP_URL = "http://www.dataclear.com/about.asp";
     
     private static final int HEIGHT_OFFSET = 50;
     private static final int VPN_TIMEOUT = 10000; 
-    private static final int CLOSE_APP_TIME_DELAY = 10000;
     private static boolean isSettings = false;
     
     private Rectangle2D screenBounds;
@@ -141,16 +153,18 @@ public class DataClear extends Application {
         if (! rawParams.isEmpty() ) {
             action = rawParams.get(0);
         }
+        
         primaryStage.setTitle(TITLE_TEXT);
-        setScreenOptions(primaryStage);
 
-        if (action.equals("settings")) {
+        if (action.equals("wifi")) {
+            setChooseWifiStage(primaryStage);
+        } else if (action.equals("settings")) {
             isSettings = true;
             setSettingsStage(primaryStage);
         } else if (isConnected() ) {
             setLoginStage(primaryStage);
         } else {
-            setChooseWifiStage(primaryStage);   
+            setChooseWifiStage(primaryStage); 
         }
     }
     
@@ -160,11 +174,12 @@ public class DataClear extends Application {
      * @return connection result
      * @throws Exception
      */
-    private boolean connectToVPN() {
+    private boolean connectToVPN(String username, String password) {
         List<String> commands = new ArrayList<String>();
+        String VPNCommand = OPENVPN_SCRIPT_PATH + " " + username + " " + password;
         commands.add("/bin/sh");
         commands.add("-c");
-        commands.add(START_VPN_COMMAND);
+        commands.add(VPNCommand);
 
         SystemCommandExecutor commandExecutor = new SystemCommandExecutor(commands);
         try {
@@ -286,8 +301,6 @@ public class DataClear extends Application {
         StringBuilder stdout = commandExecutor.getStandardOutputFromCommand();
         StringBuilder stderr = commandExecutor.getStandardErrorFromCommand();
 
-        // System.out.println("Please choose your WIFI connection from the list below: ");
-        
         String[] lines = stdout.toString().split("\\n");
         ArrayList<String> SSIDs = new ArrayList<String>();
         
@@ -310,12 +323,12 @@ public class DataClear extends Application {
         
         Label messageText = new Label(WIFI_CHANGE_WIFI_TEXT);
         Button changeWifiButton = new Button(CHANGE_WIFI_BUTTON);
-        
         Button backButton = new Button(BACK_BUTTON_TEXT);
         
         final String currentSSID = getCurrentSSID();
         
         ObservableList<String> wifiConnections = FXCollections.observableArrayList();
+        
         // list of all sources, including connected
         ArrayList<String> SSIDs = getAvailableWifi();
         
@@ -336,8 +349,8 @@ public class DataClear extends Application {
             listView.setItems(wifiConnections);
             root.getChildren().add(listView);
             root.getChildren().add(vbox);
-            root.getChildren().add(changeWifiButton); 
             root.getChildren().add(messageText);
+            root.getChildren().add(changeWifiButton); 
         } else {
             root.getChildren().add(messageText);
             messageText.setText(WIFI_UNAVAILABLE);
@@ -347,11 +360,11 @@ public class DataClear extends Application {
             root.getChildren().add(backButton);
         }
         Scene scene = new Scene(root, screenBounds.getWidth() / 2, screenBounds.getHeight() / 2);
+        // Scene scene = new Scene(root, screenBounds.getWidth(), screenBounds.getHeight());
 
         primaryStage.setScene(scene);
-        // setScreenOptions(primaryStage);
         primaryStage.show();     
-        
+        // setMaximizeScreenOptions(primaryStage);
         
         changeWifiButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override
@@ -385,11 +398,8 @@ public class DataClear extends Application {
             grid.setVgap(10);
             grid.setPadding(new Insets(25, 25, 25, 25));
     
-            // Scene scene = new Scene(grid, 300, 275);
-            
-            
             Scene scene = new Scene(grid,  screenBounds.getWidth() / 2, screenBounds.getHeight() / 2);
-    
+            
             primaryStage.setScene(scene);
             
             // Add Text, Labels, and Text Fields
@@ -418,7 +428,9 @@ public class DataClear extends Application {
             Text messageText = new Text();
             grid.add(messageText, 1, 6);
             
-            //setScreenOptions(primaryStage);
+            Text secondMessageText = new Text();
+            grid.add(secondMessageText, 1, 7);
+            
             primaryStage.show();
             
             /**
@@ -453,6 +465,18 @@ public class DataClear extends Application {
                 }
             });         
             
+            
+            passwordBox.setOnKeyPressed(new EventHandler<KeyEvent>() {
+                @Override
+                public void handle(KeyEvent keyEvent) {
+                    if (keyEvent.getCode() == KeyCode.ENTER)  {
+                        setMessageText(messageText, CONNECTING_TEXT);
+                        handleLogin(messageText, secondMessageText, 
+                                userTextField, passwordBox, primaryStage);
+                    }
+                }
+            });
+            
             /**
              * Attempt connection when button is clicked.
              * 
@@ -461,45 +485,59 @@ public class DataClear extends Application {
                 @Override
                 public void handle(ActionEvent e) {
                     // Call out to server to authorize
-                    try {
-                        String result = APICalls.authorizeUser(userTextField.getText(), passwordBox.getText());
-                        System.out.println("RESULT: " + result);
-                        switch (result) {
-                            case APICalls.TRUE_LOGIN_RESULT:
-                                // login successful
-                                if ( connectToVPN() ) {
-                                    // connected message
-                                    messageText.setText("Connected!");
-                                    System.out.println("Connected!");
-                                    System.exit(0);
-                                } else {
-                                    messageText.setText(VPN_CONNECTION_ERROR);
-                                }
-                                break;
-                                
-                            case APICalls.FALSE_LOGIN_RESULT:
-                                // login unsuccessful
-                                // set error string
-                                messageText.setText(AUTHORIZATION_FAILURE_TEXT);
-                                break;
-                                
-                            case APICalls.CHANGE_LOGIN_RESULT:
-                                // login successful but insecure (not to change password)
-                                setChangePasswordStage(primaryStage);
-                                break;
-                                
-                            default:
-                                messageText.setText(SYSTEM_FAILURE);
-                                break;
-                        }
-                        
-                    } catch (Exception e1) {
-                        messageText.setText(UNKNOWN_ERROR_TEXT);
-                    }
+                    handleLogin(messageText, secondMessageText, 
+                            userTextField, passwordBox, primaryStage);
                 }
-            });    
+            });
         }
-
+        
+        private void handleLogin(Text messageText, Text secondMessageText, 
+                TextField userTextField, PasswordField passwordBox, Stage primaryStage) {
+            try {
+                String result = APICalls.authorizeUser(userTextField.getText(), passwordBox.getText());
+                switch (result) {
+                    case APICalls.TRUE_LOGIN_RESULT:
+                        // login successful
+                        if ( connectToVPN(userTextField.getText(), passwordBox.getText()) ) {
+                            // connected message
+                            
+                            new Thread(() -> {
+                                   secondMessageText.setText("Connected!");
+                                   try {
+                                       Thread.sleep(2000);
+                                   } catch (InterruptedException e) {
+                                       e.printStackTrace();
+                                   }
+                                   
+                            }).start();
+                            
+                            
+                            System.exit(0);
+                        } else {
+                            messageText.setText(VPN_CONNECTION_ERROR);
+                        }
+                        break;
+                        
+                    case APICalls.FALSE_LOGIN_RESULT:
+                        // login unsuccessful
+                        // set error string
+                        messageText.setText(AUTHORIZATION_FAILURE_TEXT);
+                        break;
+                        
+                    case APICalls.CHANGE_LOGIN_RESULT:
+                        // login successful but insecure (not to change password)
+                        setChangePasswordStage(primaryStage);
+                        break;
+                        
+                    default:
+                        messageText.setText(SYSTEM_FAILURE);
+                        break;
+                }
+                
+            } catch (Exception e1) {
+                messageText.setText(UNKNOWN_ERROR_TEXT);
+            }
+        }
         
     /**
      * Show settings UI and control navigation to other sections
@@ -524,10 +562,7 @@ public class DataClear extends Application {
         root.getChildren().addAll(vbox);
         root.getChildren().addAll(wifiButton, changePasswordButton, helpButton, factoryResetButton, messageText);
         Scene scene = new Scene(root, screenBounds.getWidth() / 2, screenBounds.getHeight() / 2);
-
-        //primaryStage.setTitle(TITLE_TEXT);
         primaryStage.setScene(scene);
-        //setScreenOptions(primaryStage);
         primaryStage.show();
         
         /*
@@ -581,8 +616,8 @@ public class DataClear extends Application {
         root.setAlignment(Pos.CENTER);
         vbox.setPadding(new Insets(5));
         
-        Label label = new Label("");
-        label.setFont(Font.font("Times New Roman", FontWeight.BOLD, 30));
+        Label welcomeLabel = new Label(WELCOME_TEXT);
+        welcomeLabel.setFont(Font.font("Arial", FontWeight.BOLD, 30));
         
         Text messageText = new Text();
         
@@ -595,14 +630,24 @@ public class DataClear extends Application {
         PasswordField wifiPassword = new PasswordField();
         Button submitButton = new Button(WIFI_SUBMIT_BUTTON_TEXT);
         Button backButton = new Button(BACK_BUTTON_TEXT);        
+        Label availableWiFiLabel =  new Label(AVAILABLE_WIFI_TEXT);
+        Label ChooseWifiLabel = new Label(CHOOSE_WIFI_TEXT);
+        
+        GridPane grid = new GridPane();
+        grid.setAlignment(Pos.BASELINE_LEFT);
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.add(passwordLabel, 0, 0);
+        grid.add(wifiPassword, 1, 0);
         
         if (SSIDs.size() > 0) {
             listView.setPrefSize(50, 250);
             listView.setEditable(true);
             listView.setItems(wifiConnections);
-            root.getChildren().add(listView);
-            root.getChildren().addAll(label, vbox);
-            root.getChildren().addAll(passwordLabel, wifiPassword, submitButton);           
+            root.getChildren().add(welcomeLabel);
+            root.getChildren().addAll(availableWiFiLabel, listView, ChooseWifiLabel);
+            root.getChildren().add(grid);
+            root.getChildren().add(submitButton);
         } else {
             messageText.setText(WIFI_UNAVAILABLE);
         }
@@ -611,43 +656,45 @@ public class DataClear extends Application {
         if (isSettings) {
             root.getChildren().add(backButton);
         }
+        
         Scene scene = new Scene(root, screenBounds.getWidth() / 2, screenBounds.getHeight() / 2);
-    
-        primaryStage.setTitle(TITLE_TEXT);
         primaryStage.setScene(scene);
-    
-        //setScreenOptions(primaryStage);
         primaryStage.show();
         
+        submitButton.addEventHandler(MouseEvent.MOUSE_PRESSED,
+                new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent e) {
+                messageText.setText(AUTHORIZING_TEXT);
+            }
+          });
+        
+        
+        primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() { 
+            @Override 
+            public void handle(final WindowEvent windowEvent) { 
+                windowEvent.consume(); 
+                }
+            });
+                
         /*
          * Handle button press action
          */
         submitButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent e) {
-                if (listView.getSelectionModel().getSelectedItem() == null ) {
-                    messageText.setText(WIFI_NO_SELECTION_ERROR);
-                    return;
-                }
-    
-                String SSID = listView.getSelectionModel().getSelectedItem().toString();
-                String password = wifiPassword.getText();
-                
-                // if (SSID.length() < 1) 
-                try {
-                    if (connectToWifi(SSID, password)) {
-                        // move to next screen
-                        if (isSettings) {
-                            messageText.setText(WIFI_CONNECTION_MESSAGE);
-                        } else {
-                            setLoginStage(primaryStage);
-                        }
-                    } else {
-                        // display error
-                        messageText.setText(WIFI_CONNECTION_ERROR);
-                    }
-                } catch (IOException | InterruptedException e1) {
-                    messageText.setText(WIFI_CONNECTION_ERROR);
+                handleConnectToWifi(listView, messageText, wifiPassword, primaryStage);
+            }
+        });
+        
+        wifiPassword.setOnKeyPressed(new EventHandler<KeyEvent>() {
+            @Override
+            public void handle(KeyEvent ke)
+            {
+                if (ke.getCode().equals(KeyCode.ENTER))
+                {
+                    messageText.setText(AUTHORIZING_TEXT);
+                    handleConnectToWifi(listView, messageText, wifiPassword, primaryStage);
                 }
             }
         });
@@ -660,9 +707,37 @@ public class DataClear extends Application {
                 } catch (Exception ex) { }
             }
         });
-        
     }
+    
+    private void handleConnectToWifi(ListView<String> listView, Text messageText, 
+            PasswordField wifiPassword, Stage primaryStage) {
+        if (listView.getSelectionModel().getSelectedItem() == null ) {
+            messageText.setText(WIFI_NO_SELECTION_ERROR);
+            return;
+        }
 
+        String SSID = listView.getSelectionModel().getSelectedItem().toString();
+        String password = wifiPassword.getText();
+        
+        try {
+            connectToWifi(SSID, password);
+            if (isConnected()) {
+                // move to next screen
+                if (isSettings) {
+                    messageText.setText(WIFI_CONNECTION_MESSAGE);
+                } else {
+                    setLoginStage(primaryStage);
+                }
+            } else {
+                // display error
+                messageText.setText(WIFI_CONNECTION_ERROR);
+            }
+        } catch (IOException | InterruptedException e1) {
+            messageText.setText(WIFI_CONNECTION_ERROR);
+        }
+    }
+    
+    
     /**
      * Show the UI that allows for changing password
      * 
@@ -709,7 +784,6 @@ public class DataClear extends Application {
         grid.add(newPasswordBoxTwo, 1, 4);         
         
         Button btn = new Button(UPDATE_PASSWORD_BUTTON_TEXT);
-        
         Button backButton = new Button(BACK_BUTTON_TEXT);
         
         HBox hbBtn = new HBox(10);
@@ -717,24 +791,23 @@ public class DataClear extends Application {
         hbBtn.getChildren().add(btn);
         grid.add(hbBtn, 1, 5);
         
-        Text messageText = new Text();
+        Text messageText = new Text("");
         grid.add(messageText, 1, 6);
         
         if (isSettings) {
             grid.add(backButton, 1, 7);
         }
         
-        //setScreenOptions(primaryStage);
         primaryStage.show(); 
         
         /**
          * Change message text on errors.
          */
-        hbBtn.addEventHandler(MouseEvent.MOUSE_PRESSED,
+        btn.addEventHandler(MouseEvent.MOUSE_PRESSED,
                 new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent e) {
-                setMessageText(messageText, AUTHORIZING_TEXT);
+                messageText.setText(AUTHORIZING_TEXT);
             }
           });
         
@@ -777,8 +850,6 @@ public class DataClear extends Application {
                     return;
                 }
                 
-                setChangePasswordStage(primaryStage);
-                
                 // Call out to server to authorize
                 try {
                     String result = changePassword(
@@ -811,7 +882,6 @@ public class DataClear extends Application {
                     }
                     
                 } catch (Exception e1) {
-                    // TODO Auto-generated catch block
                     messageText.setText(UNKNOWN_ERROR_TEXT);
                 }
             }
@@ -854,13 +924,10 @@ public class DataClear extends Application {
         WebView webView = new WebView();
         final Button backButton = new Button(BACK_BUTTON_TEXT);
 
-        root.getChildren().addAll(webView, progress);
-        
-        // TODO: add this button to the bottom of the pane
-        // root.getChildren().add(backButton);
+        root.getChildren().addAll(webView, progress, backButton);
         
         final WebEngine engine = webView.getEngine();
-        engine.load("http://www.dataclear.com/about.asp");
+        engine.load(DATACLEAR_HELP_URL);
         
 
         // updating progress bar using binding
@@ -926,7 +993,7 @@ public class DataClear extends Application {
      */
     private boolean connectToWifi(String SSID, String password) throws IOException, InterruptedException {
         String wifiCommand = CONNECT_TO_WIFI_COMMAND + " " + SSID + " " 
-                + CONNECT_TO_WIFI_COMMAND_PWD + " " + password; 
+                + CONNECT_TO_WIFI_COMMAND_PWD + " " + password + " name " + SSID; 
         
         List<String> commands = new ArrayList<String>();
         commands.add("/bin/sh");
@@ -934,19 +1001,46 @@ public class DataClear extends Application {
         commands.add(wifiCommand);
         SystemCommandExecutor commandExecutor = new SystemCommandExecutor(commands);
         
+        System.out.println(wifiCommand);
+        
         int result = commandExecutor.executeCommand();
 
         StringBuilder stdout = commandExecutor.getStandardOutputFromCommand();
         StringBuilder stderr = commandExecutor.getStandardErrorFromCommand();
        
         // TODO: remove this debug code
+        System.out.println("RESULT: " + result);
         System.out.println("STDOUT: " + stdout);
         System.out.println("STDERR: " + stderr);
-        System.out.println("RESULT: " + result);
+        System.out.println("------------------");
         
-        if (result == 0) {
+        System.out.println("STDERR length: " + stderr.length());
+        System.out.println("Result: " + result);
+        
+        // reported result of zero and no Error
+        if (result == 0 && stdout.indexOf("Error") == -1) {
             return true;
         }
+        
+        // On failure delete the connection you just made
+        String deleteWifiCommand = DELETE_WIFI_CONNECTION + " " + SSID;
+        commands = new ArrayList<String>();
+        commands.add("/bin/sh");
+        commands.add("-c");
+        commands.add(deleteWifiCommand);
+        commandExecutor = new SystemCommandExecutor(commands);    
+        
+        result = commandExecutor.executeCommand();
+
+        stdout = commandExecutor.getStandardOutputFromCommand();
+        stderr = commandExecutor.getStandardErrorFromCommand();
+        
+        System.out.println(deleteWifiCommand);
+        System.out.println("RESULT: " + result);
+        System.out.println("STDOUT: " + stdout);
+        System.out.println("STDERR: " + stderr);
+        System.out.println("------------------");
+        
         return false;
     }
     
@@ -992,7 +1086,7 @@ public class DataClear extends Application {
         hbox.setPadding(new Insets(5));
         
         Label label = new Label(COMING_SOON_TEXT);
-        label.setFont(Font.font("Times New Roman", FontWeight.BOLD, 30));
+        label.setFont(Font.font("Arial", FontWeight.BOLD, 30));
         
         Button backButton = new Button(BACK_BUTTON_TEXT);
         
@@ -1012,10 +1106,7 @@ public class DataClear extends Application {
         Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
         Scene scene = new Scene(root,  screenBounds.getWidth() / 2, screenBounds.getHeight() / 2);
 
-
-        //primaryStage.setTitle(TITLE_TEXT);
         primaryStage.setScene(scene);
-        //setScreenOptions(primaryStage);
         primaryStage.show();  
         
         backButton.setOnAction(new EventHandler<ActionEvent>() {
@@ -1066,12 +1157,12 @@ public class DataClear extends Application {
         
         Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
         Scene scene = new Scene(root, screenBounds.getWidth() / 2, screenBounds.getHeight() / 2);
-
+        // Scene scene = new Scene(root);
 
         primaryStage.setTitle(TITLE_TEXT);
         primaryStage.setScene(scene);
-        setScreenOptions(primaryStage);
         primaryStage.show();
+        setMaximizeScreenOptions(primaryStage);
         
         netflixButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override public void handle(ActionEvent e) { 
@@ -1113,17 +1204,15 @@ public class DataClear extends Application {
      * 
      * @param primaryStage
      */
-    private void setScreenOptions(Stage primaryStage) {
+    private void setMaximizeScreenOptions(Stage primaryStage) {
         primaryStage.getIcons().add(new Image("file:" + System.getProperty("user.home") + "Images/eye.png" ));
-        // primaryStage.setFullScreenExitHint("");
-        // primaryStage.setFullScreen(true);
-        
-        // Testing:
-        //primaryStage.resizableProperty().setValue(Boolean.FALSE);
-        //primaryStage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
-        //primaryStage.setFullScreenExitKeyCombination(new KeyCodeCombination(KeyCode.E, KeyCombination.CONTROL_DOWN));
-        //primaryStage.setResizable(false);
-        //primaryStage.setMaximized(true);
+        primaryStage.setMaximized(true);
+    }
+    
+    private void setNormalScreenOptions(Stage primaryStage) {
+        primaryStage.getIcons().add(new Image("file:" + System.getProperty("user.home") + "Images/eye.png" ));
+        primaryStage.setFullScreenExitHint("");
+        primaryStage.setFullScreen(true);
     }
     
     public static void main(String[] args) {

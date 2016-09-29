@@ -11,6 +11,7 @@ to directory:
 with content:
 
 dataclear	ALL=(ALL)	NOPASSWD:/usr/bin/nmcli
+dataclear	ALL=(ALL)	NOPASSWD:/usr/local/sbin/openvpn
 
 -----------------
 
