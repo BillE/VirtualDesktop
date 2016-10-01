@@ -18,7 +18,7 @@ public class ChilkatLibrary {
         try {
             System.loadLibrary("chilkat");
         } catch (UnsatisfiedLinkError e) {
-            System.err.println("Native code library failed to load.\n" + e);
+            // System.err.println("Native code library failed to load.\n" + e);
             errorCode = 1;
         }
     }
@@ -32,7 +32,7 @@ public class ChilkatLibrary {
         
         boolean success = rsa.UnlockComponent(CHILKAT_UNLOCK_CODE);
         if (success != true) {
-            System.out.println(rsa.lastErrorText());
+            // System.out.println(rsa.lastErrorText());
             // TODO: throw meaningful exception
             throw new Exception();
         }
@@ -43,7 +43,7 @@ public class ChilkatLibrary {
         String pubKeyXml = pubKey.getXml();
         success = rsa.ImportPublicKey(pubKeyXml);
         if (success != true) {
-            System.out.println(rsa.lastErrorText());
+            // System.out.println(rsa.lastErrorText());
             // TODO: throw meaningful exception
             throw new Exception();
         }
@@ -67,14 +67,14 @@ public class ChilkatLibrary {
         String privKeyXml = privateKey.getXml();
         success = rsa.ImportPublicKey(privKeyXml);
         if (success != true) {
-            System.out.println(rsa.lastErrorText());
+            // System.out.println(rsa.lastErrorText());
             // TODO: throw meaningful exception
             throw new Exception();
         }
         
         success = rsa.UnlockComponent(CHILKAT_UNLOCK_CODE);
         if (success != true) {
-            System.out.println(rsa.lastErrorText());
+            // System.out.println(rsa.lastErrorText());
             // TODO: throw meaningful exception
             throw new Exception();
         }

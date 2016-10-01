@@ -54,7 +54,7 @@ public class APICalls {
             result.append(line);
         }
         
-        System.out.println(result);
+        // System.out.println(result);
         return false;
     }
     
@@ -121,7 +121,7 @@ public class APICalls {
                 result.append(line);
             }
             
-            System.out.println(result);
+            // System.out.println(result);
             
             // TODO: confirm result
             return result.toString(); 
@@ -132,63 +132,7 @@ public class APICalls {
     
     // FOR TESTING ONLY
     public static void main (String[] args) {
-        
-        try {
-            String result = authorizeUser("test2","P@$$w0rd!!!@#$");
-            switch (result) {
-                case APICalls.TRUE_LOGIN_RESULT:
-                    System.out.println("True result.");
-                    break;
-                    
-                case APICalls.FALSE_LOGIN_RESULT:
-                    System.out.println("False result.");
-                    break;
-                case APICalls.CHANGE_LOGIN_RESULT:
-                    System.out.println("Change result.");
-                    break;
-            }
-            
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        
-        String loginID = "whereisbill";
-        String password = "da_DonAustin2112";
-        
-        try {
-            String result = authorizeUser(loginID, password);
-            System.out.println(result);
-            result = authorizeUser(loginID, "asdfadfsasdf");
-            System.out.println(result);
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        
-        
-        
-               
-                /*
-        try {
-            String loginID = "whereisbill";
-            isSecurePassword(loginID);
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        
-        try {
-            String loginID = "whereisbill";
-            String newPassword = "";
-            String oldPassword = "";
-            
-            changePassword(loginID, oldPassword, newPassword);
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        */
+ 
          
     }
 

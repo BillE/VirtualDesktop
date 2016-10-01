@@ -134,7 +134,7 @@ public class DataClear extends Application {
     private static final String AVAILABLE_WIFI_TEXT = "Available WiFi";
     private static final String CHOOSE_WIFI_TEXT = "Please select WiFi and enter password below";
     
-    private static final String DATACLEAR_HELP_URL = "http://www.dataclear.com/about.asp";
+    private static final String DATACLEAR_HELP_URL = "https://dataclear.com/help.html";
     
     private static final int HEIGHT_OFFSET = 50;
     private static final int VPN_TIMEOUT = 10000; 
@@ -168,6 +168,53 @@ public class DataClear extends Application {
         }
     }
     
+    private static class VPN implements Runnable {
+        private volatile boolean running = true;
+        private String username;
+        private String password;
+        
+        // TODO: start this in a separae thread. Kill the thread when the internal network
+        // can be reached by ping
+        
+        public VPN(String username, String password) {
+            setUsername(username);
+            setPassword(password);
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+        
+        public void setPassword(String password) {
+            this.password = password;
+        }
+        
+        public void run() {
+            List<String> commands = new ArrayList<String>();
+            String VPNCommand = OPENVPN_SCRIPT_PATH + " " + username + " " + password;
+            commands.add("/bin/sh");
+            commands.add("-c");
+            commands.add(VPNCommand);
+            // System.out.println(VPNCommand);
+            SystemCommandExecutor commandExecutor = new SystemCommandExecutor(commands);
+            
+            try {
+                int result = commandExecutor.executeCommand();
+
+                StringBuilder stdout = commandExecutor.getStandardOutputFromCommand();
+                StringBuilder stderr = commandExecutor.getStandardErrorFromCommand();
+                
+            } catch (InterruptedException e1) {
+                Thread.currentThread().interrupt();
+                return;
+            } catch (Exception e2) {
+                // return false;
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
+    }
+    
     /**
      * Attempt to connect to DataClear VPN. 
      * 
@@ -175,38 +222,24 @@ public class DataClear extends Application {
      * @throws Exception
      */
     private boolean connectToVPN(String username, String password) {
-        List<String> commands = new ArrayList<String>();
-        String VPNCommand = OPENVPN_SCRIPT_PATH + " " + username + " " + password;
-        commands.add("/bin/sh");
-        commands.add("-c");
-        commands.add(VPNCommand);
-
-        SystemCommandExecutor commandExecutor = new SystemCommandExecutor(commands);
-        try {
-            int result = commandExecutor.executeCommand();
-
-            StringBuilder stdout = commandExecutor.getStandardOutputFromCommand();
-            StringBuilder stderr = commandExecutor.getStandardErrorFromCommand();
-            
-            if (stderr.length() > 1 ) {
-                return false;
-            }
-            
-        } catch (Exception e) {
-            return false;
-        }
+        VPN vpn = new VPN(username, password);
+        
+        Thread t1 = new Thread(vpn, "T1");
+        t1.start();
         
         // test for connection by pinging. if no success after timeout, return error
         long startTime = System.currentTimeMillis(); //fetch starting time
-        System.out.println("Starting vpn timeout loop.");
+        // System.out.println("Starting vpn timeout loop.");
         while(System.currentTimeMillis() - startTime < VPN_TIMEOUT) {
             // test every second:
             long millis = System.currentTimeMillis();            
             try {
                 Thread.sleep(1000 - millis % 1000);
-                System.out.println("Trying to ping host...");
+                // System.out.println("Trying to ping host...");
                 if (isPingable(PING_VPN_HOST)) {
-                    System.out.println("Connected to VPN!");
+                    t1.interrupt();
+                    t1.join();
+                    // System.out.println("Connected to VPN!");
                     return true;
                 }
                 
@@ -247,10 +280,12 @@ public class DataClear extends Application {
             StringBuilder stdout = commandExecutor.getStandardOutputFromCommand();
             StringBuilder stderr = commandExecutor.getStandardErrorFromCommand();
             
+            /*
             System.out.println(PING_COMMAND + " " + host);
             System.out.println(result);
             System.out.println(stdout);
             System.out.println(stderr);
+            */
             
             if (stderr.length() > 1 ) {
                 return false;
@@ -277,7 +312,7 @@ public class DataClear extends Application {
         try {
             return APICalls.changePassword(loginID, oldPassword, newPassword);
         } catch (Exception e) {
-            System.out.println("API FAILURE");
+            // System.out.println("API FAILURE");
             return APICalls.FALSE_CHANGE_PASSWORD_RESULT;
         }
     }
@@ -856,27 +891,27 @@ public class DataClear extends Application {
                             userNameTextField.getText(), 
                             currentPasswordBox.getText(), 
                             newPasswordBoxOne.getText());
-                    System.out.println("RESULT: " + result);
+                    // System.out.println("RESULT: " + result);
                     switch (result) {
                         case APICalls.TRUE_CHANGE_PASSWORD_RESULT:
                             // login successful
-                            System.out.println("TRUE RESULT!");
+                            // System.out.println("TRUE RESULT!");
                             setLoginStage(primaryStage);
                             break;
                             
                         case APICalls.FALSE_CHANGE_PASSWORD_RESULT:
                             // login unsuccessful
-                            System.out.println("FALSE RESULT!");
+                            // System.out.println("FALSE RESULT!");
                             messageText.setText(AUTHORIZATION_FAILURE_TEXT);
                             break;
                             
                         case APICalls.PASSWORD_COMPLEXITY_RESULT:
-                            System.out.println("COMPLEXITY FAIURE!");
+                            // System.out.println("COMPLEXITY FAIURE!");
                             messageText.setText(COMPLEXITY_FAILURE_TEXT);
                             break;
                             
                         default:
-                            System.out.println("SYSTEM FAILURE");
+                            // System.out.println("SYSTEM FAILURE");
                             messageText.setText(SYSTEM_FAILURE);
                             break;
                     }
@@ -1001,14 +1036,14 @@ public class DataClear extends Application {
         commands.add(wifiCommand);
         SystemCommandExecutor commandExecutor = new SystemCommandExecutor(commands);
         
-        System.out.println(wifiCommand);
+        // System.out.println(wifiCommand);
         
         int result = commandExecutor.executeCommand();
 
         StringBuilder stdout = commandExecutor.getStandardOutputFromCommand();
         StringBuilder stderr = commandExecutor.getStandardErrorFromCommand();
        
-        // TODO: remove this debug code
+        /*
         System.out.println("RESULT: " + result);
         System.out.println("STDOUT: " + stdout);
         System.out.println("STDERR: " + stderr);
@@ -1016,6 +1051,7 @@ public class DataClear extends Application {
         
         System.out.println("STDERR length: " + stderr.length());
         System.out.println("Result: " + result);
+        */
         
         // reported result of zero and no Error
         if (result == 0 && stdout.indexOf("Error") == -1) {
@@ -1035,11 +1071,13 @@ public class DataClear extends Application {
         stdout = commandExecutor.getStandardOutputFromCommand();
         stderr = commandExecutor.getStandardErrorFromCommand();
         
+        /*
         System.out.println(deleteWifiCommand);
         System.out.println("RESULT: " + result);
         System.out.println("STDOUT: " + stdout);
         System.out.println("STDERR: " + stderr);
         System.out.println("------------------");
+        */
         
         return false;
     }
