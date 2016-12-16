@@ -1,0 +1,19 @@
+[Desktop Entry]
+
+Encoding=UTF-8
+
+Type=Application
+
+Name=DataClear Desktop
+
+Comment=
+
+Icon=/home/dataclear/Images/eye.png
+
+Exec=java -jar /home/dataclear/Scripts/DataClearLauncher.jar
+
+StartupNotify=false
+
+Terminal=false
+
+Hidden=false

@@ -1,0 +1,20 @@
+[Desktop Entry]
+
+Encoding=UTF-8
+
+Type=Application
+
+Name=DataClear Desktop
+
+Comment=
+
+Icon=/home/dataclear/Images/firefox.jpg
+
+Exec=/usr/bin/firefox http://www.dataclear.com
+
+StartupNotify=false
+
+Terminal=false
+
+Hidden=false
+Name[en_US]=Browser

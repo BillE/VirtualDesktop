@@ -1,0 +1,20 @@
+[Desktop Entry]
+
+Encoding=UTF-8
+
+Type=Application
+
+Name=DataClear Desktop
+
+Comment=
+
+Icon=/home/dataclear/Images/desktop.png
+
+Exec=/usr/bin/firefox http://10.233.3.24/Citrix/StoreWeb
+
+StartupNotify=false
+
+Terminal=false
+
+Hidden=false
+Name[en_US]=Desktop
