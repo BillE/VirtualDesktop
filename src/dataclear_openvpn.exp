@@ -2,7 +2,7 @@
 
 set username [lindex $argv 0];
 set password [lindex $argv 1];
-set config "/home/dataclear/Scripts/DataClear_SoftEther.ovpn"
+set config "/home/dataclear/Scripts/DataClear.ovpn"
 
 spawn sudo /usr/sbin/openvpn --script-security 2  --config $config --auth-user-pass
 expect "Enter Auth Username:"
