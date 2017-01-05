@@ -1,0 +1,95 @@
+DATACLEAR INSTALLATION INSTRUCTIONS FOR COMPUTE STICK
+
+----------------------------------------------------
+
+
+INSTALL Ubuntu Desktop 16.04 OS from USB stick
+Download from https://www.ubuntu.com/download/desktop
+Burn to USB stick
+Install on Compute Stick
+
+INSTALL Java
+
+>sudo add-apt-repository ppa:webupd8team/java 
+>sudo apt-get update
+>sudo apt-get install oracle-java8-installer
+
+INSTALL opvenvpn
+>sudo install apt-get openvpn
+
+INSTALL Chilkat Library
+Downoload Java JDK8 64-bit Library (under Linux Downloads) at:
+https://www.chilkatsoft.com/java.asp
+
+Extract, run test script and copy .so file to /usr/lib directory
+
+INSTALL Google Chrome (needed for Netflix)
+http://askubuntu.com/questions/510056/how-to-install-google-chrome
+
+wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add - 
+
+sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+
+sudo apt-get update 
+sudo apt-get install google-chrome-stable
+
+DISABLE SCREEN LOCK
+
+settings -> security & privacy -> require my password when
+uncheck "waking from suspend"
+uncheck "returning from blank screen"
+
+
+INSTALL JAVA APP
+DataClearLauncher.jar into ~/Scripts/
+
+
+SET JAVA APP TO RUN ON STARTUP
+copy file dataClear.desktop (from /config/ directory in github repo)
+into ~/.config/autostart/
+
+SET UP PRIVATE/PUBLIC KEYS
+copy cPubKey.pem and cPrivKey.pem to ~/.ssh/
+
+SET UP OPENVPN
+/home/dataclear/Scripts/dataclear_openvpn.exp
+
+INSTALL EXPECT
+(provides support for interactive scripts)
+>sudo apt-get install expect
+
+ADD OPENVPN HELPER FILE
+(this script is called from java app, passing in username and password to start openvpn session)
+from github copy
+dataclear_openvpn.exp to
+/home/dataclear/
+
+make sure file is executable (permissions should be 755)
+
+INSTALLING CITRIX RECEIVER ON UBUNTU 14.04
+https://help.ubuntu.com/community/CitrixICAClientHowTo
+
+1. Download Citrix Receiver deb file from citrix.com/downloads (Receiver 13.4 for linux) -> (Debian packages) -> 
+Download both "Web Package" and "USB Support Package." Choose x86_64 architecture.
+
+2. Install 
+>sudo dpkg -i *.deb
+>sudo apt-get -f install  # Install dependencies and finish configuring the package(s)
+
+
+3. Add SSL certs
+>sudo ln -s /usr/share/ca-certificates/mozilla/*  /opt/Citrix/ICAClient/keystore/cacerts/
+>sudo c_rehash /opt/Citrix/ICAClient/keystore/cacerts/
+
+4. configure firefox
+Remove these files if they exist.
+>sudo rm -f /usr/lib/mozilla/plugins/npwrapper.npica.so /usr/lib/firefox/plugins/npwrapper.npica.so
+>sudo rm -f /usr/lib/mozilla/plugins/npica.so
+
+Add new symlinks
+>sudo ln -s /opt/Citrix/ICAClient/npica.so /usr/lib/mozilla/plugins/npica.so
+>sudo ln -s /opt/Citrix/ICAClient/npica.so /usr/lib/firefox-addons/plugins/npica.so
+
+5. activate firefox plugin
+In Firefox, go to Tools -> Add-ons -> Plugins, and make sure the "Citrix Receiver for Linux" plugin is set to "Always Activate".
+
