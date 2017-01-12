@@ -1,70 +1,75 @@
 DATACLEAR INSTALLATION INSTRUCTIONS FOR COMPUTE STICK
-
 ----------------------------------------------------
-
-
 INSTALL Ubuntu Desktop 16.04 OS from USB stick
 Download from https://www.ubuntu.com/download/desktop
 Burn to USB stick
 Install on Compute Stick
 
 INSTALL Java
-
->sudo add-apt-repository ppa:webupd8team/java 
->sudo apt-get update
->sudo apt-get install oracle-java8-installer
+> sudo add-apt-repository ppa:webupd8team/java 
+> sudo apt-get update
+> sudo apt-get install oracle-java8-installer
 
 INSTALL opvenvpn
->sudo install apt-get openvpn
+> sudo install apt-get openvpncd /home/dataclear/scripts
 
 INSTALL Chilkat Library
-Downoload Java JDK8 64-bit Library (under Linux Downloads) at:
-https://www.chilkatsoft.com/java.asp
+Download Java JDK8 64-bit Library (under Linux Downloads) at: https://www.chilkatsoft.com/java.asp
+example: http://chilkatdownload.com/9.5.0.65/chilkatjava-9.5.0-jdk8-x86_64-linux.tar.gz
 
-Extract, run test script and copy .so file to /usr/lib directory
+notes: Extract, run test script and copy .so file to /usr/lib directory
+> umask 022 
+> sudo mkdir /tmp/unpack && cd /tmp/unpack
+> sudo wget http://chilkatdownload.com/9.5.0.65/chilkatjava-9.5.0-jdk8-x86_64-linux.tar.gz
+> sudo gzip -dc chilkatJava-9.5.0-jdk8-x86_64-linux.tar.gz | tar -xof -
+> sudo bash ./runTest.sh && cp ./*.so /usr/lib
 
 INSTALL Google Chrome (needed for Netflix)
-http://askubuntu.com/questions/510056/how-to-install-google-chrome
-
-wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add - 
-
-sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
-
-sudo apt-get update 
-sudo apt-get install google-chrome-stable
+notes: http://askubuntu.com/questions/510056/how-to-install-google-chrome
+> wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add - 
+> sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+> sudo apt-get update 
+> sudo apt-get install google-chrome-stable
 
 DISABLE SCREEN LOCK
-
-settings -> security & privacy -> require my password when
+notes: settings -> security & privacy -> require my password when
 uncheck "waking from suspend"
 uncheck "returning from blank screen"
-
+> sudo dconf write /org/gnome/desktop/screensaver/idle-activation-enabled false
+> sudo dconf write /org/gnome/desktop/screensaver/lock-enabled false
 
 INSTALL JAVA APP
-DataClearLauncher.jar into ~/Scripts/
-
+notes: copy DataClearLauncher.jar into ~/Scripts/
+> umask 022
+> sudo mkdir -p /home/dataclear/Scripts
+> sudo cd /home/dataclear/Scripts
+> sudo wget https://github.com/BillE/DataClearNavigation/blob/master/DataClearLauncher.jar
 
 SET JAVA APP TO RUN ON STARTUP
-copy file dataClear.desktop (from /config/ directory in github repo)
-into ~/.config/autostart/
+notes: copy file dataClear.desktop (from /config/ directory in github repo) into ~/.config/autostart/
+> sudo cd /home/dataclear/.config/autostart
+> sudo wget https://github.com/BillE/DataClearNavigation/blob/master/config/dataClear.desktop
 
 SET UP PRIVATE/PUBLIC KEYS
-copy cPubKey.pem and cPrivKey.pem to ~/.ssh/
+notes: copy cPubKey.pem and cPrivKey.pem to ~/.ssh/
+> sudo cp <filelocationgoeshere> /home/dataclear/.ssh/
+> sudo chmod 644 /home/dataclear/.ssh/*.pem
 
 SET UP OPENVPN
-/home/dataclear/Scripts/dataclear_openvpn.exp
+> /home/dataclear/Scripts/dataclear_openvpn.exp
 
 INSTALL EXPECT
-(provides support for interactive scripts)
->sudo apt-get install expect
+notes: (provides support for interactive scripts)
+> sudo apt-get install expect
 
 ADD OPENVPN HELPER FILE
-(this script is called from java app, passing in username and password to start openvpn session)
-from github copy
-dataclear_openvpn.exp to
-/home/dataclear/
+notes: (this script is called from java app, passing in username and password to start openvpn session)
+notes: copy from github copy dataclear_openvpn.exp to /home/dataclear/
+> sudo cd /home/dataclear
+> sduo wget https://github.com/BillE/DataClearNavigation/blob/master/src/dataclear_openvpn.exp 
+> sudo chmod 755 ./dataclear_openvpn.exp
 
-make sure file is executable (permissions should be 755)
+notes: make sure file is executable (permissions should be 755)
 
 INSTALLING CITRIX RECEIVER ON UBUNTU 14.04
 https://help.ubuntu.com/community/CitrixICAClientHowTo
@@ -73,23 +78,23 @@ https://help.ubuntu.com/community/CitrixICAClientHowTo
 Download both "Web Package" and "USB Support Package." Choose x86_64 architecture.
 
 2. Install 
->sudo dpkg -i *.deb
->sudo apt-get -f install  # Install dependencies and finish configuring the package(s)
-
+> sudo dpkg -i *.deb
+> sudo apt-get -f install  # Install dependencies and finish configuring the package(s)
 
 3. Add SSL certs
->sudo ln -s /usr/share/ca-certificates/mozilla/*  /opt/Citrix/ICAClient/keystore/cacerts/
->sudo c_rehash /opt/Citrix/ICAClient/keystore/cacerts/
+> sudo ln -s /usr/share/ca-certificates/mozilla/*  /opt/Citrix/ICAClient/keystore/cacerts/
+> sudo c_rehash /opt/Citrix/ICAClient/keystore/cacerts/
 
 4. configure firefox
 Remove these files if they exist.
->sudo rm -f /usr/lib/mozilla/plugins/npwrapper.npica.so /usr/lib/firefox/plugins/npwrapper.npica.so
->sudo rm -f /usr/lib/mozilla/plugins/npica.so
+> sudo rm -f /usr/lib/mozilla/plugins/npwrapper.npica.so /usr/lib/firefox/plugins/npwrapper.npica.so
+> sudo rm -f /usr/lib/mozilla/plugins/npica.so
 
 Add new symlinks
->sudo ln -s /opt/Citrix/ICAClient/npica.so /usr/lib/mozilla/plugins/npica.so
->sudo ln -s /opt/Citrix/ICAClient/npica.so /usr/lib/firefox-addons/plugins/npica.so
+> sudo ln -s /opt/Citrix/ICAClient/npica.so /usr/lib/mozilla/plugins/npica.so
+> sudo ln -s /opt/Citrix/ICAClient/npica.so /usr/lib/firefox-addons/plugins/npica.so
 
 5. activate firefox plugin
 In Firefox, go to Tools -> Add-ons -> Plugins, and make sure the "Citrix Receiver for Linux" plugin is set to "Always Activate".
+notes: this may help us http://askubuntu.com/questions/74313/list-and-enable-disable-compiz-plugins-on-command-line/635159#635159
 
