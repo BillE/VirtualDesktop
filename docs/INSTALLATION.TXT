@@ -1,4 +1,5 @@
 DATACLEAR INSTALLATION INSTRUCTIONS FOR COMPUTE STICK
+created by Bill Eberle
 ----------------------------------------------------
 INSTALL Ubuntu Desktop 16.04 OS from USB stick
 Download from https://www.ubuntu.com/download/desktop
