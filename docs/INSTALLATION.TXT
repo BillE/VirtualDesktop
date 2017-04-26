@@ -12,7 +12,7 @@ INSTALL Java
 > sudo apt-get install oracle-java8-installer
 
 INSTALL opvenvpn
-> sudo install apt-get openvpncd /home/dataclear/scripts
+> sudo install apt-get openvpn
 
 INSTALL Chilkat Library
 Download Java JDK8 64-bit Library (under Linux Downloads) at: https://www.chilkatsoft.com/java.asp
