@@ -235,11 +235,9 @@ public class DataClear extends Application {
             long millis = System.currentTimeMillis();            
             try {
                 Thread.sleep(1000 - millis % 1000);
-                // System.out.println("Trying to ping host...");
                 if (isPingable(PING_VPN_HOST)) {
                     t1.interrupt();
                     t1.join();
-                    // System.out.println("Connected to VPN!");
                     return true;
                 }
                 
@@ -280,13 +278,6 @@ public class DataClear extends Application {
             StringBuilder stdout = commandExecutor.getStandardOutputFromCommand();
             StringBuilder stderr = commandExecutor.getStandardErrorFromCommand();
             
-            /*
-            System.out.println(PING_COMMAND + " " + host);
-            System.out.println(result);
-            System.out.println(stdout);
-            System.out.println(stderr);
-            */
-            
             if (stderr.length() > 1 ) {
                 return false;
             }
@@ -312,7 +303,6 @@ public class DataClear extends Application {
         try {
             return APICalls.changePassword(loginID, oldPassword, newPassword);
         } catch (Exception e) {
-            // System.out.println("API FAILURE");
             return APICalls.FALSE_CHANGE_PASSWORD_RESULT;
         }
     }
@@ -395,11 +385,9 @@ public class DataClear extends Application {
             root.getChildren().add(backButton);
         }
         Scene scene = new Scene(root, screenBounds.getWidth() / 2, screenBounds.getHeight() / 2);
-        // Scene scene = new Scene(root, screenBounds.getWidth(), screenBounds.getHeight());
 
         primaryStage.setScene(scene);
-        primaryStage.show();     
-        // setMaximizeScreenOptions(primaryStage);
+        primaryStage.show();
         
         changeWifiButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override
@@ -891,27 +879,20 @@ public class DataClear extends Application {
                             userNameTextField.getText(), 
                             currentPasswordBox.getText(), 
                             newPasswordBoxOne.getText());
-                    // System.out.println("RESULT: " + result);
                     switch (result) {
                         case APICalls.TRUE_CHANGE_PASSWORD_RESULT:
-                            // login successful
-                            // System.out.println("TRUE RESULT!");
                             setLoginStage(primaryStage);
                             break;
                             
                         case APICalls.FALSE_CHANGE_PASSWORD_RESULT:
-                            // login unsuccessful
-                            // System.out.println("FALSE RESULT!");
                             messageText.setText(AUTHORIZATION_FAILURE_TEXT);
                             break;
                             
                         case APICalls.PASSWORD_COMPLEXITY_RESULT:
-                            // System.out.println("COMPLEXITY FAIURE!");
                             messageText.setText(COMPLEXITY_FAILURE_TEXT);
                             break;
                             
                         default:
-                            // System.out.println("SYSTEM FAILURE");
                             messageText.setText(SYSTEM_FAILURE);
                             break;
                     }
@@ -1007,7 +988,6 @@ public class DataClear extends Application {
 
             String[] lines = stdout.toString().split("\\n");
             
-            // TODO: sort SSIDs by signal strength
             for (String s: lines) {
                 String[] arr = s.split("\\s+");
                 if (arr.length > 8) {
@@ -1036,22 +1016,10 @@ public class DataClear extends Application {
         commands.add(wifiCommand);
         SystemCommandExecutor commandExecutor = new SystemCommandExecutor(commands);
         
-        // System.out.println(wifiCommand);
-        
         int result = commandExecutor.executeCommand();
 
         StringBuilder stdout = commandExecutor.getStandardOutputFromCommand();
         StringBuilder stderr = commandExecutor.getStandardErrorFromCommand();
-       
-        /*
-        System.out.println("RESULT: " + result);
-        System.out.println("STDOUT: " + stdout);
-        System.out.println("STDERR: " + stderr);
-        System.out.println("------------------");
-        
-        System.out.println("STDERR length: " + stderr.length());
-        System.out.println("Result: " + result);
-        */
         
         // reported result of zero and no Error
         if (result == 0 && stdout.indexOf("Error") == -1) {
@@ -1070,14 +1038,6 @@ public class DataClear extends Application {
 
         stdout = commandExecutor.getStandardOutputFromCommand();
         stderr = commandExecutor.getStandardErrorFromCommand();
-        
-        /*
-        System.out.println(deleteWifiCommand);
-        System.out.println("RESULT: " + result);
-        System.out.println("STDOUT: " + stdout);
-        System.out.println("STDERR: " + stderr);
-        System.out.println("------------------");
-        */
         
         return false;
     }
