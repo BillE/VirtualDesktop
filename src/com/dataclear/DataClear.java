@@ -79,7 +79,7 @@ public class DataClear extends Application {
     private static final String NETFLIX_URL = "http://www.netflix.com";
     private static final String BROWSER_URL = "http://www.dataclear.com";
     private static final String DESKTOP_URL = "http://10.233.3.24/Citrix/StoreWeb/";
-    private static final String OPENVPN_SCRIPT_PATH = "/home/dataclear/Scripts/dataclear_openvpn.exp";
+    private static final String OPENVPN_SCRIPT_PATH = "/home/dataclear/Scripts/dataclear.ovpn";
     
     private static final String FIREFOX_PATH = "/usr/bin/firefox";
     private static final String CHROME_PATH = "/opt/google/chrome/google-chrome";
