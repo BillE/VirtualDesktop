@@ -1123,6 +1123,7 @@ public class DataClear extends Application {
      * @deprecated replaced by icons on desktop
      * @param primaryStage
      */
+    @Deprecated
     private void setNavigationStage(Stage primaryStage) {
         System.exit(0);
         FlowPane root = new FlowPane(Orientation.VERTICAL, 10, 10);

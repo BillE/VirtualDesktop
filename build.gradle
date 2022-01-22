@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'org.openjfx.javafxplugin' version '0.0.11'
 }
 
 group 'com.boarcode'
@@ -18,6 +19,11 @@ dependencies {
     implementation 'org.apache.httpcomponents:httpmime:4.5.2'
     implementation 'org.apache.httpcomponents:httpcore:4.4.4'
     implementation 'org.apache.httpcomponents:httpclient-cache:4.5.2'
+}
+
+javafx {
+    version = "12"
+    modules = [ 'javafx.controls', 'javafx.fxml', 'javafx.web' ]
 }
 
 sourceSets {
